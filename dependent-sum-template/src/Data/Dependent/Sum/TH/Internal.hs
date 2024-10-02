@@ -28,7 +28,7 @@ classHeadToParams t = (h, reverse reversedParams)
 deriveForDec :: Name -> (Q Type -> Q Type) -> ([TyVarBndrSpec] -> [Con] -> Q Dec) -> Dec -> Q [Dec]
 deriveForDec className makeClassHead f dec = deriveForDec' className makeClassHead (f . changeTVFlags specifiedSpec) dec
 
-deriveForDec' :: Name -> (Q Type -> Q Type) -> ([TyVarBndrUnit] -> [Con] -> Q Dec) -> Dec -> Q [Dec]
+deriveForDec' :: Name -> (Q Type -> Q Type) -> ([TyVarBndrVis] -> [Con] -> Q Dec) -> Dec -> Q [Dec]
 deriveForDec' className _ f (InstanceD overlaps cxt classHead decs) = do
     let (givenClassName, firstParam : _) = classHeadToParams classHead
     when (givenClassName /= className) $
@@ -53,7 +53,9 @@ deriveForDec' className makeClassHead f (DataInstD dataCxt name tyArgs _ cons _)
         inst = instanceD (cxt (map return dataCxt)) clhead [dec]
 #if __GLASGOW_HASKELL__ >= 808
         clhead = makeClassHead $ return $ initTy ty
-#if __GLASGOW_HASKELL__ >= 900
+#if __GLASGOW_HASKELL__ >= 908
+        bndrs = [PlainTV v BndrReq | PlainTV v x <- maybe [] id tvBndrs]
+#elif __GLASGOW_HASKELL__ >= 900
         bndrs = [PlainTV v x | PlainTV v x <- maybe [] id tvBndrs]
 #else
         bndrs = [PlainTV v | PlainTV v <- maybe [] id tvBndrs]
